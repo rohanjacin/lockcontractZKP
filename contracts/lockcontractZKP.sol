@@ -1,8 +1,18 @@
+//SPDX-License-Identifier: UNLICENSED
+
 pragma solidity ^0.8.0;
 
 import "hardhat/console.sol";
 
+/** The Lock contract does the following
+ *  1. Allows a guest to request for authentication with a lock in vicinity
+ * 	   a. If the guest has booked the room in advance with the owner.
+ *
+ * 	2. 
+*/
 contract LockZKP {
+
+	string name;
 
 	// Session context for potential guest's
 	struct PGuestSession {
@@ -18,7 +28,7 @@ contract LockZKP {
 
 	// Session context for potential guest's
 	struct GuestProof {
-		uint256 proof; // guest proof of private key
+		uint256 p; // guest proof of private key
 		uint256 ts; // timestamp
 	}
 
@@ -33,8 +43,16 @@ contract LockZKP {
 	// Map the validated guest's with their sessions context
 	mapping (address => VGuestSession) VG_sessions;
 
+	event RequestAuth (address indexed from, address indexed to, uint256 proof);
+
 	// Guest requesting authenication on arrival
-	function reqAuth (GuestProof gproof) public {
+	function reqAuth () public {
 		// Validate guest proof
+		GuestProof memory gproof;
+		gproof.p = 1;
+		gproof.ts = 2;
+
+		console.log("Registering Auth from guest");
+		emit RequestAuth(address(this), msg.sender, 12);
 	} 
 }
