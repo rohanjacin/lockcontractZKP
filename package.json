@@ -1,0 +1,23 @@
+{
+  "name": "lockcontractzkp",
+  "version": "1.0.0",
+  "description": "A smart lock contract to authorize the Owner, the lock and the guest using a ZSNARK proof and dual diffie-hellman sorta ECC based Kobiltz encoding via a dual challenge-response protocol.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rohanjacin/lockcontractZKP.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/rohanjacin/lockcontractZKP/issues"
+  },
+  "homepage": "https://github.com/rohanjacin/lockcontractZKP#readme",
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "hardhat": "^2.22.3"
+  }
+}
