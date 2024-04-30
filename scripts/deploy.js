@@ -32,6 +32,7 @@ LockNetwork.prototype.registerEvents = async function () {
 		console.log("From:" + result.args.from);
 		console.log("To:" + result.args.to);
 		console.log("Proof:" + result.args.proof);
+		return;
 	});
 }
 
