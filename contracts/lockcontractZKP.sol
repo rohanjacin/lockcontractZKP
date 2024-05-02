@@ -13,20 +13,35 @@ import { Auction } from './auction.sol';
  *  4. 
 */
     
-
 contract LockZKP {
 
-	string name;
+    // static
     address public owner;
+    uint public bidIncrement;
+    uint public startBlock;
+    uint public endBlock;
+    string public ipfsHash;
+
+    // state
+    bool public canceled;
+    uint public highestBindingBid;
+    address public highestBidder;
+    mapping(address => uint256) public fundsByBidder;
+    bool ownerHasWithdrawn;
+
+	string name;
+	address auction;
     bool public ownerRegistered;
 	uint constant BID_INCREMENT = 10;
-	Auction auction;
+
+	//Auction auction;
 
 	// Session context for guest's
 	struct GuestSession {
 		uint16 counter; // same random counter
 		uint256 nonce; // epherium public key 
 		uint256 id; // guest identification
+		uint256 price; // guest identification
 		GuestProof gproof;
 	}
 
@@ -36,8 +51,9 @@ contract LockZKP {
 		uint256 ts; // timestamp
 	}
 
-	constructor (string memory _name) {
+	constructor (string memory _name, address _auction) {
 		name = _name;
+		auction = _auction;
 		console.log("Lock Contract created.. name:%s ", string(name));
 	}
 
@@ -48,21 +64,74 @@ contract LockZKP {
 	event RequestAuth (address indexed from, address indexed to, GuestSession ctx);
 
 	// When owner request's for bidding of the room	
-	event BidRoom (address indexed from, uint256 price);
+	event BidRoomNow (address indexed owner, uint256 price);
+
+	// When guest registers and wins bid
+	event GuestRegistered (address indexed guest, address indexed owner);
+
+	// When guest is approved
+	event GuestApproved (address indexed guest, address indexed owner, GuestSession ctx);
 
 	// Register an Owner for the property
-	function registerOwner (address _owner, uint _basePrice, string memory _ipfsHash)
+	function registerOwner (uint _basePrice, string memory _ipfsHash)
 		public onlyNoOwnerRegistered {
 		
-		owner = _owner;
+		owner = msg.sender;
 		ownerRegistered = true;
 
-		// Set the auction params
-		auction = new Auction(_owner, BID_INCREMENT, _basePrice,
-							  block.number + 1, block.number + 11, _ipfsHash);
+		console.log("Registering owner..");
+
+		// Start the auction
+		(bool success, bytes memory data) = auction.delegatecall(
+			abi.encodeWithSelector(Auction.start.selector, 
+				owner, BID_INCREMENT, _basePrice, block.number + 1,
+				block.number + 10, _ipfsHash));			
+
+		console.log("Auction started..");
+
+		console.log("owner:", owner);
+		console.log("bidIncrement:", bidIncrement);
+		console.log("startBlock:", startBlock);
+		console.log("endBlock:", endBlock);
+		console.log("ipfsHash:", ipfsHash);
 
 		// Send out an event to all participants indicating start of bidding
-		emit BidRoom (_owner, _basePrice);
+		emit BidRoomNow (owner, _basePrice);
+	}
+
+	// Owner wants to approve the guest
+	function approveGuest (address _guest)
+		public onlyOwner onlyAfterOwnerRegistered {
+		
+		address _highestBidder;
+		uint _bidPrice;
+		GuestSession memory gCtx;
+
+		// Only accept the first guest currently, then cancel auction
+		(bool success2, bytes memory data2) = auction.delegatecall(
+					abi.encodeWithSelector(Auction.cancelAuction.selector));
+
+		// Get the guest's bid
+		(bool success3, bytes memory data3) = auction.delegatecall(
+					abi.encodeWithSelector(Auction.getHighestBidAndBidder.selector));
+
+		(_highestBidder, _bidPrice) = abi.decode(data3, (address, uint));
+
+		console.log("Guest is:", _guest);
+		console.log("Highest Bidder is:", _highestBidder);
+		console.log("Bid Price:", _bidPrice);
+
+		// Add guest to the list
+		if (_guest == _highestBidder) {
+			// counter value the guest needs to enter on the lock keypad
+			// nonce will be populated when the guest arrives in vicintiy of the lock
+			gCtx.counter = 1234;
+			gCtx.id = 1;
+			gCtx.price = _bidPrice;
+			guestSessions[_guest] = gCtx;
+
+			emit GuestApproved (_guest, owner, gCtx);
+		}
 	}
 
 	// Guest requesting authenication on arrival
@@ -75,36 +144,25 @@ contract LockZKP {
 	}
 
 	// Register potential guest
+	//onlyNotOwner onlyAfterOwnerRegistered
 	function registerGuest ()
-		public onlyNotOwner onlyAfterOwnerRegistered
+		public payable 
 		returns (bool success) {
-		GuestSession memory pg;
 		address _guest;
 		uint _finalPrice;
 
-		auction.placeBid();
+		console.log("Registering guest..:", msg.value);
 
-		// Only accept the first guest currently.
-		auction.cancelAuction();
+		(bool success1, bytes memory data1) = auction.delegatecall(
+					abi.encodeWithSelector(Auction.placeBid.selector));
 
-		(_guest, _finalPrice) = auction.getHighestBidAndBidder();
-
-		console.log("Final Price:", _finalPrice);
-
-		// Add guest to the list
-		if (_guest == address(msg.sender)) {
-			// counter value the guest needs to enter on the lock keypad
-			// nonce will be populated when the guest arrives in vicintiy of the lock
-			pg.counter = 1234;
-			pg.id = 1;
-			guestSessions[msg.sender] = pg;
-
-			return true;
-		}
-		else {
-			return false;
-		}
+		emit GuestRegistered (msg.sender, owner);
 	}
+
+    modifier onlyOwner {
+        if (msg.sender != owner) revert();
+        _;
+    }
 
     modifier onlyNotOwner {
         if (msg.sender == owner) revert();
@@ -112,17 +170,17 @@ contract LockZKP {
     }
 
 	modifier onlyAfterOwnerRegistered {
-		if (!ownerRegistered) revert();
+		if (!ownerRegistered) revert("Owner not registered");
 		_;
 	}
 
 	modifier onlyNoOwnerRegistered {
-		if (ownerRegistered) revert();
+		if (ownerRegistered) revert("Owner already registered");
 		_;
 	}
 
     modifier onlyValidGuest {
-        if (guestSessions[msg.sender].id == 0) revert();
+        if (guestSessions[msg.sender].id == 0) revert("Guest session doesnt exists");
         _;
     }	
 }

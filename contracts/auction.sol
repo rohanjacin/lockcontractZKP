@@ -2,6 +2,8 @@
 
 pragma solidity ^0.8.0;
 
+import "hardhat/console.sol";
+
 /**
  ** @title Auction library
  ** @dev Library handling the bidding of rooms
@@ -11,7 +13,7 @@ pragma solidity ^0.8.0;
 
 contract Auction {
     // static
-    address public auctionOwner;
+    address public owner;
     uint public bidIncrement;
     uint public startBlock;
     uint public endBlock;
@@ -28,18 +30,21 @@ contract Auction {
     event LogWithdrawal(address withdrawer, address withdrawalAccount, uint amount);
     event LogCanceled();
 
-    constructor (address _owner, uint _bidIncrement, uint _highestBindingBid,
-                 uint _startBlock, uint _endBlock, string memory _ipfsHash) {
+        function start (address _owner, uint _bidIncrement, uint _highestBindingBid,
+                     uint _startBlock, uint _endBlock, string memory _ipfsHash)
+            public
+            returns (bool) {
         if (_startBlock >= _endBlock) revert();
         if (_startBlock < block.number) revert();
         if (_owner == address(0)) revert();
 
-        auctionOwner = _owner;
+        owner = _owner;
         bidIncrement = _bidIncrement;
         highestBindingBid = _highestBindingBid;
         startBlock = _startBlock;
         endBlock = _endBlock;
         ipfsHash = _ipfsHash;
+        return true;
     }
 
     function getHighestBidAndBidder()
@@ -60,7 +65,10 @@ contract Auction {
         returns (bool success)
     {
         // reject payments of 0 ETH
-        if (msg.value == 0) revert();
+        console.log("Placing bid:", msg.value);
+        console.log("bid from:", msg.sender);
+
+        if (msg.value == 0) revert("0 ETH send to placeBid");
 
         // calculate the user's total bid based on the current amount they've sent to the contract
         // plus whatever has been sent with this transaction
@@ -119,7 +127,7 @@ contract Auction {
         returns (bool success)
     {
         canceled = true;
-        emit LogCanceled();
+        //emit LogCanceled();
         return true;
     }
 
@@ -139,8 +147,8 @@ contract Auction {
         } else {
             // the auction finished without being canceled
 
-            if (msg.sender == auctionOwner) {
-                // the auction's auctionOwner should be allowed to withdraw the highestBindingBid
+            if (msg.sender == owner) {
+                // the auction's owner should be allowed to withdraw the highestBindingBid
                 withdrawalAccount = highestBidder;
                 withdrawalAmount = highestBindingBid;
                 ownerHasWithdrawn = true;
@@ -176,12 +184,12 @@ contract Auction {
     }
 
     modifier onlyOwner {
-        if (msg.sender != auctionOwner) revert();
+        if (msg.sender != owner) revert();
         _;
     }
 
     modifier onlyNotOwner {
-        if (msg.sender == auctionOwner) revert();
+        if (msg.sender == owner) revert();
         _;
     }
 
