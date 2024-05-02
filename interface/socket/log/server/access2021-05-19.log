@@ -1,0 +1,54 @@
+{"timestamp":"2021-05-19 15:19:30.8160","service":"udp_server","level":"info","message":"Server is listening at port 21000"}
+{"timestamp":"2021-05-19 15:19:30.8190","service":"udp_server","level":"info","message":"Server ip :0.0.0.0"}
+{"timestamp":"2021-05-19 15:19:30.8200","service":"udp_server","level":"info","message":"Server is IP4/IP6 : IPv4"}
+{"timestamp":"2021-05-19 15:35:51.0620","service":"udp_server","level":"info","message":"Server is listening at port 21000"}
+{"timestamp":"2021-05-19 15:35:51.0640","service":"udp_server","level":"info","message":"Server ip :0.0.0.0"}
+{"timestamp":"2021-05-19 15:35:51.0650","service":"udp_server","level":"info","message":"Server is IP4/IP6 : IPv4"}
+{"timestamp":"2021-05-19 15:36:30.7590","service":"udp_server","level":"info","message":"Server is listening at port 21000"}
+{"timestamp":"2021-05-19 15:36:30.7620","service":"udp_server","level":"info","message":"Server ip :0.0.0.0"}
+{"timestamp":"2021-05-19 15:36:30.7620","service":"udp_server","level":"info","message":"Server is IP4/IP6 : IPv4"}
+{"timestamp":"2021-05-19 15:36:41.9050","service":"udp_lock","level":"info","message":"{\"type\":\"Request\",\"description\":\"Request to connect\",\"timestamp\":\"2021-05-19T10:06:41.899Z\"} | Received 92 bytes from 127.0.0.1:58287"}
+{"timestamp":"2021-05-19 15:37:57.7060","service":"udp_lock","level":"info","message":"Server is listening at port 21000"}
+{"timestamp":"2021-05-19 15:37:57.7080","service":"udp_lock","level":"info","message":"Server ip :0.0.0.0"}
+{"timestamp":"2021-05-19 15:37:57.7090","service":"udp_lock","level":"info","message":"Server is IP4/IP6 : IPv4"}
+{"timestamp":"2021-05-19 15:37:59.9970","service":"udp_lock","level":"info","message":"{\"type\":\"Request\",\"description\":\"Request to connect\",\"timestamp\":\"2021-05-19T10:07:59.992Z\"} | Received 92 bytes from 127.0.0.1:54523"}
+{"timestamp":"2021-05-19 15:39:05.2840","service":"udp_lock","level":"info","message":"Server is listening at port 21000"}
+{"timestamp":"2021-05-19 15:39:05.2870","service":"udp_lock","level":"info","message":"Server ip :0.0.0.0"}
+{"timestamp":"2021-05-19 15:39:05.2880","service":"udp_lock","level":"info","message":"Server is IP4/IP6 : IPv4"}
+{"timestamp":"2021-05-19 15:39:08.1910","service":"udp_lock","level":"info","message":"{\"type\":\"Request\",\"description\":\"Request to connect\",\"timestamp\":\"2021-05-19T10:09:08.186Z\"} | Received 92 bytes from 127.0.0.1:49116"}
+{"timestamp":"2021-05-19 15:39:37.1600","service":"udp_lock","level":"info","message":"Server is listening at port 21000"}
+{"timestamp":"2021-05-19 15:39:37.1620","service":"udp_lock","level":"info","message":"Server ip :0.0.0.0"}
+{"timestamp":"2021-05-19 15:39:37.1620","service":"udp_lock","level":"info","message":"Server is IP4/IP6 : IPv4"}
+{"timestamp":"2021-05-19 15:39:38.5160","service":"udp_lock","level":"info","message":"{\"type\":\"Request\",\"description\":\"Request to connect\",\"timestamp\":\"2021-05-19T10:09:38.511Z\"} | Received 92 bytes from 127.0.0.1:33394"}
+{"timestamp":"2021-05-19 15:40:38.8320","service":"udp_lock","level":"info","message":"Server is listening at port 21000"}
+{"timestamp":"2021-05-19 15:40:38.8350","service":"udp_lock","level":"info","message":"Server ip :0.0.0.0"}
+{"timestamp":"2021-05-19 15:40:38.8350","service":"udp_lock","level":"info","message":"Server is IP4/IP6 : IPv4"}
+{"timestamp":"2021-05-19 15:40:40.1500","service":"udp_lock","level":"info","message":"{\"type\":\"Request\",\"description\":\"Request to connect\",\"timestamp\":\"2021-05-19T10:10:40.145Z\"} | Received 92 bytes from 127.0.0.1:53221"}
+{"timestamp":"2021-05-19 15:40:57.1530","service":"udp_lock","level":"info","message":"Server is listening at port 21000"}
+{"timestamp":"2021-05-19 15:40:57.1560","service":"udp_lock","level":"info","message":"Server ip :0.0.0.0"}
+{"timestamp":"2021-05-19 15:40:57.1560","service":"udp_lock","level":"info","message":"Server is IP4/IP6 : IPv4"}
+{"timestamp":"2021-05-19 15:40:58.4960","service":"udp_lock","level":"info","message":"{\"type\":\"Request\",\"description\":\"Request to connect\",\"timestamp\":\"2021-05-19T10:10:58.491Z\"} | Received 92 bytes from 127.0.0.1:42513"}
+{"timestamp":"2021-05-19 15:41:13.5730","service":"udp_lock","level":"info","message":"Server is listening at port 21000"}
+{"timestamp":"2021-05-19 15:41:13.5760","service":"udp_lock","level":"info","message":"Server ip :0.0.0.0"}
+{"timestamp":"2021-05-19 15:41:13.5760","service":"udp_lock","level":"info","message":"Server is IP4/IP6 : IPv4"}
+{"timestamp":"2021-05-19 15:41:14.9380","service":"udp_lock","level":"info","message":"{\"type\":\"Request\",\"description\":\"Request to connect\",\"timestamp\":\"2021-05-19T10:11:14.932Z\"} | Received 92 bytes from 127.0.0.1:52929"}
+{"timestamp":"2021-05-19 16:19:05.5980","service":"udp_lock","level":"info","message":"Server is listening at port 21000"}
+{"timestamp":"2021-05-19 16:19:05.6000","service":"udp_lock","level":"info","message":"Server ip :0.0.0.0"}
+{"timestamp":"2021-05-19 16:19:05.6010","service":"udp_lock","level":"info","message":"Server is IP4/IP6 : IPv4"}
+{"timestamp":"2021-05-19 16:19:10.6940","service":"udp_lock","level":"info","message":"{\"type\":\"Request\",\"description\":\"Request to connect\",\"timestamp\":\"2021-05-19T10:49:10.689Z\"} | Received 92 bytes from 127.0.0.1:44845"}
+{"timestamp":"2021-05-19 16:24:42.7690","service":"udp_lock","level":"info","message":"Server is listening at port 21000"}
+{"timestamp":"2021-05-19 16:24:42.7720","service":"udp_lock","level":"info","message":"Server ip :0.0.0.0"}
+{"timestamp":"2021-05-19 16:24:42.7720","service":"udp_lock","level":"info","message":"Server is IP4/IP6 : IPv4"}
+{"timestamp":"2021-05-19 16:24:44.3400","service":"udp_lock","level":"info","message":"{\"type\":\"ResponsePending\",\"description\":\"Response is pending\",\"timestamp\":\"2021-05-19T10:54:44.335Z\"} | Received 101 bytes from 127.0.0.1:45928"}
+{"timestamp":"2021-05-19 16:25:07.3050","service":"udp_lock","level":"info","message":"Server is listening at port 21000"}
+{"timestamp":"2021-05-19 16:25:07.3080","service":"udp_lock","level":"info","message":"Server ip :0.0.0.0"}
+{"timestamp":"2021-05-19 16:25:07.3080","service":"udp_lock","level":"info","message":"Server is IP4/IP6 : IPv4"}
+{"timestamp":"2021-05-19 16:25:08.4600","service":"udp_lock","level":"info","message":"{\"type\":\"Response\",\"description\":\"Response arrived\",\"timestamp\":\"2021-05-19T10:55:08.451Z\"} | Received 91 bytes from 127.0.0.1:47759"}
+{"timestamp":"2021-05-19 16:25:27.9750","service":"udp_lock","level":"info","message":"Server is listening at port 21000"}
+{"timestamp":"2021-05-19 16:25:27.9770","service":"udp_lock","level":"info","message":"Server ip :0.0.0.0"}
+{"timestamp":"2021-05-19 16:25:27.9770","service":"udp_lock","level":"info","message":"Server is IP4/IP6 : IPv4"}
+{"timestamp":"2021-05-19 16:25:29.1130","service":"udp_lock","level":"info","message":"{\"type\":\"ResponsePending\",\"description\":\"Response arrived\",\"timestamp\":\"2021-05-19T10:55:29.108Z\"} | Received 98 bytes from 127.0.0.1:40308"}
+{"timestamp":"2021-05-19 16:25:39.7310","service":"udp_lock","level":"info","message":"Server is listening at port 21000"}
+{"timestamp":"2021-05-19 16:25:39.7330","service":"udp_lock","level":"info","message":"Server ip :0.0.0.0"}
+{"timestamp":"2021-05-19 16:25:39.7330","service":"udp_lock","level":"info","message":"Server is IP4/IP6 : IPv4"}
+{"timestamp":"2021-05-19 16:25:40.9230","service":"udp_lock","level":"info","message":"{\"type\":\"ResponsePendi\",\"description\":\"Response arrived\",\"timestamp\":\"2021-05-19T10:55:40.918Z\"} | Received 96 bytes from 127.0.0.1:55162"}

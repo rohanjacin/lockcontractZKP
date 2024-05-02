@@ -27,8 +27,6 @@ LockNetwork.prototype.deploy = async function () {
 
 	
 	this.registerEvents();
-
-	//this.reqAuth();
 }
 
 LockNetwork.prototype.registerEvents = async function () {
@@ -60,10 +58,6 @@ LockNetwork.prototype.registerEvents = async function () {
 		console.log("Ctx:" + result.args.ctx);
 		return;
 	});		
-}
-
-LockNetwork.prototype.reqAuth = async function () {
-	await this.samplelock.reqAuth();
 }
 
 var locknet = new LockNetwork();

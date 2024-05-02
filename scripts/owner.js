@@ -35,15 +35,16 @@ LockNetwork.prototype.registerEvents = async function () {
 		return;
 	});
 
-/*	filter = this.samplelock.filters.RequestAuth(this.deployedAddress, null);
+	filter = this.samplelock.filters.RequestAuth(null, this.owner, null);
 	console.log("filter:" + Object.keys(filter));
 	this.samplelock.on(filter, (result) => {
 
-		console.log("From:" + result.args.from);
-		console.log("To:" + result.args.to);
-		console.log("Proof:" + result.args.proof);
+		console.log("Guest:" + result.args.guest);
+		console.log("Owner:" + result.args.owner);
+		console.log("Ctx:" + result.args.ctx);
+		console.log("Lock Nonce:" + result.args.ctx.locknonce);
 		return;
-	});*/
+	});
 }
 
 LockNetwork.prototype.registerRoom = async function () {

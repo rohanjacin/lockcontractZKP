@@ -1,0 +1,35 @@
+{"timestamp":"2021-05-16 18:06:36.8290","service":"udp_server","level":"info","message":"Server is listening at port 21000"}
+{"timestamp":"2021-05-16 18:06:36.8320","service":"udp_server","level":"info","message":"Server ip :0.0.0.0"}
+{"timestamp":"2021-05-16 18:06:36.8330","service":"udp_server","level":"info","message":"Server is IP4/IP6 : IPv4"}
+{"timestamp":"2021-05-16 18:07:07.6200","service":"udp_server","level":"info","message":"MSG from UDP client | Received 19 bytes from 127.0.0.1:45468"}
+{"timestamp":"2021-05-16 18:07:07.6220","service":"udp_server","level":"info","message":"Data sent !!!"}
+{"timestamp":"2021-05-16 18:07:07.6230","service":"udp_server","level":"info","message":"helloworld | Received 10 bytes from 127.0.0.1:45468"}
+{"timestamp":"2021-05-16 18:07:07.6230","service":"udp_server","level":"info","message":"Data sent !!!"}
+{"timestamp":"2021-05-16 18:08:12.2280","service":"udp_server","level":"info","message":"MSG from UDP client | Received 19 bytes from 127.0.0.1:40195"}
+{"timestamp":"2021-05-16 18:08:12.2290","service":"udp_server","level":"info","message":"Data sent !!!"}
+{"timestamp":"2021-05-16 18:08:12.2290","service":"udp_server","level":"info","message":"helloworld | Received 10 bytes from 127.0.0.1:40195"}
+{"timestamp":"2021-05-16 18:08:12.2300","service":"udp_server","level":"info","message":"Data sent !!!"}
+{"timestamp":"2021-05-16 18:08:27.0310","service":"udp_server","level":"info","message":"MSG from UDP client | Received 19 bytes from 127.0.0.1:52249"}
+{"timestamp":"2021-05-16 18:08:27.0320","service":"udp_server","level":"info","message":"Data sent !!!"}
+{"timestamp":"2021-05-16 18:08:27.0320","service":"udp_server","level":"info","message":"helloworld | Received 10 bytes from 127.0.0.1:52249"}
+{"timestamp":"2021-05-16 18:08:27.0330","service":"udp_server","level":"info","message":"Data sent !!!"}
+{"timestamp":"2021-05-16 18:17:24.9410","service":"udp_server","level":"info","message":"Server is listening at port 21000"}
+{"timestamp":"2021-05-16 18:17:24.9440","service":"udp_server","level":"info","message":"Server ip :0.0.0.0"}
+{"timestamp":"2021-05-16 18:17:24.9450","service":"udp_server","level":"info","message":"Server is IP4/IP6 : IPv4"}
+{"timestamp":"2021-05-16 18:17:31.3450","service":"udp_lock","level":"info","message":"MSG from UDP client | Received 19 bytes from 127.0.0.1:44014"}
+{"timestamp":"2021-05-16 18:17:31.3460","service":"udp_lock","level":"info","message":"Frame ${frame.type} sent !!!"}
+{"timestamp":"2021-05-16 18:17:31.3460","service":"udp_lock","level":"info","message":"helloworld | Received 10 bytes from 127.0.0.1:44014"}
+{"timestamp":"2021-05-16 18:17:31.3460","service":"udp_lock","level":"info","message":"Frame ${frame.type} sent !!!"}
+{"timestamp":"2021-05-16 18:19:14.7370","service":"udp_server","level":"info","message":"Server is listening at port 21000"}
+{"timestamp":"2021-05-16 18:19:14.7400","service":"udp_server","level":"info","message":"Server ip :0.0.0.0"}
+{"timestamp":"2021-05-16 18:19:14.7400","service":"udp_server","level":"info","message":"Server is IP4/IP6 : IPv4"}
+{"timestamp":"2021-05-16 18:19:15.9850","service":"udp_lock","level":"info","message":"MSG from UDP client | Received 19 bytes from 127.0.0.1:36709"}
+{"timestamp":"2021-05-16 18:19:15.9860","service":"udp_lock","level":"info","message":"Frame ${frame.type} sent !!!"}
+{"timestamp":"2021-05-16 18:19:15.9870","service":"udp_lock","level":"info","message":"helloworld | Received 10 bytes from 127.0.0.1:36709"}
+{"timestamp":"2021-05-16 18:19:15.9870","service":"udp_lock","level":"info","message":"Frame ${frame.type} sent !!!"}
+{"timestamp":"2021-05-16 18:19:52.8170","service":"udp_lock","level":"info","message":"MSG from UDP client | Received 19 bytes from 127.0.0.1:38974"}
+{"timestamp":"2021-05-16 18:19:52.8180","service":"udp_lock","level":"info","message":"Frame ${frame.type} sent !!!"}
+{"timestamp":"2021-05-16 18:19:52.8180","service":"udp_lock","level":"info","message":"helloworld | Received 10 bytes from 127.0.0.1:38974"}
+{"timestamp":"2021-05-16 18:19:52.8190","service":"udp_lock","level":"info","message":"Frame ${frame.type} sent !!!"}
+{"timestamp":"2021-05-16 18:22:22.9020","service":"udp_lock","level":"info","message":"{\"type\":\"Request\",\"description\":\"Request to connect\",\"timestamp\":\"2021-05-16T12:52:22.896Z\"} | Received 92 bytes from 127.0.0.1:39240"}
+{"timestamp":"2021-05-16 18:22:22.9020","service":"udp_lock","level":"info","message":"Frame ${frame.type} sent !!!"}

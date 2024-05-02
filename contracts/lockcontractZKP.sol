@@ -12,7 +12,16 @@ import { Auction } from './auction.sol';
  * 	   while in vicinty to the lock. 
  *  4. 
 */
-    
+
+// Nonce structure (https://drive.google.com/file/d/1lza0qvFcVXlVRDdPPlYLRkMz2nAFCdVS/view?usp=sharing)
+struct LockNonce {
+	bytes nonce0; //65
+	bytes nonce1; //32
+	bytes seed; //65
+	bytes counter; //1
+	bytes hmac; //32
+}
+
 contract LockZKP {
 
     // static
@@ -39,9 +48,10 @@ contract LockZKP {
 	// Session context for guest's
 	struct GuestSession {
 		uint16 counter; // same random counter
-		uint256 nonce; // epherium public key 
+		bytes nonce0; // epherium public key (65 bytes) 
 		uint256 id; // guest identification
 		uint256 price; // guest identification
+		LockNonce locknonce; // lock challenge
 		GuestProof gproof;
 	}
 
@@ -61,7 +71,7 @@ contract LockZKP {
 	mapping (address => GuestSession) public guestSessions;
 
 	// When guest request for authorization with the lock
-	event RequestAuth (address indexed from, address indexed to, GuestSession ctx);
+	event RequestAuth (address indexed guest, address indexed owner, GuestSession ctx);
 
 	// When owner request's for bidding of the room	
 	event BidRoomNow (address indexed owner, uint256 price);
@@ -100,7 +110,7 @@ contract LockZKP {
 	}
 
 	// Owner wants to approve the guest
-	function approveGuest (address _guest)
+	function approveGuest (address _guest, bytes memory nonce0)
 		public onlyOwner onlyAfterOwnerRegistered {
 		
 		address _highestBidder;
@@ -128,6 +138,7 @@ contract LockZKP {
 			gCtx.counter = 1234;
 			gCtx.id = 1;
 			gCtx.price = _bidPrice;
+			gCtx.nonce0 = nonce0;
 			guestSessions[_guest] = gCtx;
 
 			emit GuestApproved (_guest, owner, gCtx);
@@ -135,12 +146,18 @@ contract LockZKP {
 	}
 
 	// Guest requesting authenication on arrival
-	function reqAuth (GuestProof memory _proof) public onlyNotOwner onlyValidGuest {
-
+	function reqAuth (GuestProof memory _proof, LockNonce memory _nonce)
+		public onlyNotOwner onlyValidGuest {
+		address _guest = msg.sender;
 		// Validate guest proof here
-		// If valid guest 
+
+
+		// If valid guest forward the nonce (challenge) to owner
+		GuestSession memory gCtx;
+		gCtx = guestSessions[_guest];
+		gCtx.locknonce = _nonce; 						 
 		console.log("Registering Auth from guest");
-		emit RequestAuth (msg.sender, owner, guestSessions[msg.sender]);
+		emit RequestAuth (_guest, owner, gCtx);
 	}
 
 	// Register potential guest

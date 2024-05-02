@@ -20,31 +20,23 @@ LockNetwork.prototype.connect = async function () {
 	var deployer, owner;
 	[deployer, owner, this.guest] = await hre.ethers.getSigners();
 	
-	//this.registerEvents();
-	//this.registerRoom();
+	this.registerEvents();
 	this.requestRoom();
 }
 
 LockNetwork.prototype.registerEvents = async function () {
 
-/*	let selfAddress = hre.ethers.getSigners();
-	let filter = this.samplelock.filters.GuestRegistered(null, selfAddress[0]);
+	filter = this.samplelock.filters.GuestApproved(this.guest, null, null);
 	this.samplelock.on(filter, (result) => {
 
-		console.log("guest:" + result.args.guest);
-		console.log("owner:" + result.args.owner);
-		return;
-	});*/
+		console.log("We have been approved by owner..");
+		console.log("Guest:" + result.args.guest);
+		console.log("Owner:" + result.args.owner);
+		console.log("Ctx:" + result.args.ctx);
 
-/*	filter = this.samplelock.filters.RequestAuth(this.deployedAddress, null);
-	console.log("filter:" + Object.keys(filter));
-	this.samplelock.on(filter, (result) => {
-
-		console.log("From:" + result.args.from);
-		console.log("To:" + result.args.to);
-		console.log("Proof:" + result.args.proof);
+		this.reqAuth();
 		return;
-	});*/
+	});	
 }
 
 LockNetwork.prototype.requestRoom = async function () {
@@ -53,6 +45,10 @@ LockNetwork.prototype.requestRoom = async function () {
 	await this.samplelock.connect(this.guest).registerGuest({value: bidPrice});
 
 	console.log("We requested room as guest");
+}
+
+LockNetwork.prototype.reqAuth = async function () {
+	await this.samplelock.connect(this.guest).reqAuth();
 }
 
 var locknet = new LockNetwork();
