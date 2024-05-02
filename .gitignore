@@ -1,3 +1,4 @@
 /node_modules
 /artifacts
 /cache
+/interface/socket/node_modules
