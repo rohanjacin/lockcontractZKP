@@ -3,10 +3,6 @@ const conf = require('./config/config')
 const util = require('util');
 const EventEmitter = require('events');
 
-const {
-    log
-} = require('./util/loggerTool')
-
 var client;
 
 var UdpServer;
@@ -23,7 +19,7 @@ UdpServer = function UdpServer () {
     client = udp.createSocket('udp4');
 
     client.on('message', (msg,info) => {
-        log("udp_server", "info", msg.toString() + ` | Received ${msg.length} bytes from ${info.address}:${info.port}`)
+        console.log("udp_server", "info", msg.toString() + ` | Received ${msg.length} bytes from ${info.address}:${info.port}`)
         this.address = info.address; this.port = info.port;
         this.parseFrame(msg);
     });

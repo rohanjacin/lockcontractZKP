@@ -1,4 +1,5 @@
 /node_modules
 /artifacts
 /cache
-/interface/socket/node_modules
+/src/guest/interface/socket/log
+/src/guest/interface/socket/node_modules

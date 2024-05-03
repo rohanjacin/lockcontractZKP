@@ -87,11 +87,9 @@ HS_Curve.prototype.createPointFromPublic = function (type, p) {
 	else if (type == 'secp256k1')
 		ec = this.ec_secp256k1;
 
-	console.log("HERE:" + JSON.stringify(p));
 	let point = ec.keyFromPublic(p, 'string');
 
-	//return point.getPublic();
-	return point;
+	return point.getPublic();
 }
 
 HS_Curve.prototype.encodePointForCipher = function (type, p) {

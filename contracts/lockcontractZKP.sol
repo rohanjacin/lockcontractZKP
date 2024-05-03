@@ -50,8 +50,10 @@ contract LockZKP {
 		uint16 counter; // same random counter
 		bytes nonce0; // epherium public key (65 bytes) 
 		uint256 id; // guest identification
+		//address guest; // guest address
 		uint256 price; // guest identification
 		LockNonce locknonce; // lock challenge
+		LockNonce ownernonce; // owner challenge
 		GuestProof gproof;
 	}
 
@@ -72,6 +74,9 @@ contract LockZKP {
 
 	// When guest request for authorization with the lock
 	event RequestAuth (address indexed guest, address indexed owner, GuestSession ctx);
+
+	// When owner responds to authorization with the lock
+	event RespondAuth (address indexed owner, address indexed guest, GuestSession ctx);
 
 	// When owner request's for bidding of the room	
 	event BidRoomNow (address indexed owner, uint256 price);
@@ -139,6 +144,7 @@ contract LockZKP {
 			gCtx.id = 1;
 			gCtx.price = _bidPrice;
 			gCtx.nonce0 = nonce0;
+			//gCtx.guest = _guest;
 			guestSessions[_guest] = gCtx;
 
 			emit GuestApproved (_guest, owner, gCtx);
@@ -146,7 +152,7 @@ contract LockZKP {
 	}
 
 	// Guest requesting authenication on arrival
-	function reqAuth (GuestProof memory _proof, LockNonce memory _nonce)
+	function reqAuth (/*GuestProof memory _proof, */LockNonce memory _nonce)
 		public onlyNotOwner onlyValidGuest {
 		address _guest = msg.sender;
 		// Validate guest proof here
@@ -158,6 +164,20 @@ contract LockZKP {
 		gCtx.locknonce = _nonce; 						 
 		console.log("Registering Auth from guest");
 		emit RequestAuth (_guest, owner, gCtx);
+	}
+
+	// Owner's response to authenication
+	function responseAuth (/*GuestProof memory _proof, */address _guest, LockNonce memory _nonce)
+		public onlyOwner onlyAfterOwnerRegistered {
+		// Validate owner's proof here
+
+
+		// If valid owner forward the nonce (challenge) to lock
+		GuestSession memory gCtx;
+		gCtx = guestSessions[_guest];
+		gCtx.ownernonce = _nonce; 						 
+		console.log("Responding to Auth from guest");
+		emit RespondAuth (owner, _guest, gCtx);
 	}
 
 	// Register potential guest
