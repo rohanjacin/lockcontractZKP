@@ -2,6 +2,7 @@ const hre = require("hardhat");
 const { ServerHandshake } = require("./server_handshake.js");
 var hsm = require('./hsm.js');
 const BN = require("bn.js");
+const { LockProver } = require("./prover.js");
 
 class LockNetwork extends ServerHandshake {
 	constructor() {
@@ -11,6 +12,7 @@ class LockNetwork extends ServerHandshake {
 		this.deployedAddress = null;
 		this.owner = null;
     this.guest = null;
+    this.lockprover = new LockProver();
     this.buildContractEventHandler();
 		console.log("Lock net init.");
 	}
@@ -20,7 +22,7 @@ class LockNetwork extends ServerHandshake {
 LockNetwork.prototype.connect = async function () {
 
 	this.Lock = await hre.ethers.getContractFactory('LockZKP');
-	this.samplelock = await this.Lock.attach('0xf5059a5D33d5853360D16C683c16e67980206f36');
+	this.samplelock = await this.Lock.attach('0x322813Fd9A801c5507c9de605d63CEA4f2CE6c44');
 	console.log(`Attached to LockNetwork contract`);
 	var deployer;
 	[deployer, this.owner] = await hre.ethers.getSigners();
@@ -128,7 +130,12 @@ LockNetwork.prototype.responseAuth = async function (guest, nonce) {
   const response = {nonce0, nonce1, seed, counter, hmac};
   console.log("Response:" + JSON.stringify(response));
 
-  await this.samplelock.connect(this.owner).responseAuth(guest, response);
+  this.lockprover.update();
+  let { proof, publicSignals } = await this.lockprover.prove();
+
+  await this.samplelock.connect(this.owner).responseAuth(guest,
+                                response, proof[0], proof[1], proof[2],
+                                publicSignals);
   console.log("We responded to the auth");
 }
 

@@ -22,6 +22,18 @@ struct LockNonce {
 	bytes hmac; //32
 }
 
+// Interface to verifier.sol (Owner verification)
+interface IGroth16Verifier {
+    function verifyProof(uint[2] calldata _pA, uint[2][2] calldata _pB,
+    uint[2] calldata _pC, uint[16] calldata _pubSignals) external view returns (bool);
+}
+
+// Interface to guestverifier.sol (Guest verification)
+interface IGuestVerifier {
+    function verifyProof(uint[2] calldata _pA, uint[2][2] calldata _pB,
+    uint[2] calldata _pC, uint[16] calldata _pubSignals) external view returns (bool);
+}
+
 contract LockZKP {
 
     // static
@@ -39,7 +51,13 @@ contract LockZKP {
     bool ownerHasWithdrawn;
 
 	string name;
+	// Auction contract address
 	address auction;
+	// Owner verifier contract address
+	address ownerverifier;
+	// Guest verifier contract address
+	address guestverifier;
+
     bool public ownerRegistered;
 	uint constant BID_INCREMENT = 10;
 
@@ -63,9 +81,12 @@ contract LockZKP {
 		uint256 ts; // timestamp
 	}
 
-	constructor (string memory _name, address _auction) {
+	constructor (string memory _name, address _auction,
+				 address _ownerverifier, address _guestverifier) {
 		name = _name;
 		auction = _auction;
+		ownerverifier = _ownerverifier;
+		guestverifier = _guestverifier;
 		console.log("Lock Contract created.. name:%s ", string(name));
 	}
 
@@ -76,7 +97,8 @@ contract LockZKP {
 	event RequestAuth (address indexed guest, address indexed owner, GuestSession ctx);
 
 	// When owner responds to authorization with the lock
-	event RespondAuth (address indexed owner, address indexed guest, GuestSession ctx);
+	event RespondAuth (address indexed owner, address indexed guest,
+					   GuestSession ctx, bool isOwnerVerfied);
 
 	// When owner request's for bidding of the room	
 	event BidRoomNow (address indexed owner, uint256 price);
@@ -152,11 +174,18 @@ contract LockZKP {
 	}
 
 	// Guest requesting authenication on arrival
-	function reqAuth (/*GuestProof memory _proof, */LockNonce memory _nonce)
+	function reqAuth (LockNonce memory _nonce, uint[2] calldata _proof0,
+						   uint[2][2] calldata _proof1, uint[2] calldata _proof2,
+							uint[16] calldata  _publicSignals)
 		public onlyNotOwner onlyValidGuest {
 		address _guest = msg.sender;
-		// Validate guest proof here
 
+		// Validate guest proof here
+		bool result = IGuestVerifier(guestverifier).verifyProof(
+			_proof0, _proof1, _proof2, _publicSignals);
+		//bool result = true;
+		console.log("Proof verifier(guest):", result);
+		//require(result);
 
 		// If valid guest forward the nonce (challenge) to owner
 		GuestSession memory gCtx;
@@ -167,17 +196,25 @@ contract LockZKP {
 	}
 
 	// Owner's response to authenication
-	function responseAuth (/*GuestProof memory _proof, */address _guest, LockNonce memory _nonce)
+	function responseAuth (/*GuestProof memory _proof, */address _guest,
+						   LockNonce memory _nonce,  uint[2] calldata _proof0,
+						   uint[2][2] calldata _proof1, uint[2] calldata _proof2,
+							uint[16] calldata  _publicSignals)
 		public onlyOwner onlyAfterOwnerRegistered {
 		// Validate owner's proof here
 
+		bool result = IGroth16Verifier(ownerverifier).verifyProof(
+			_proof0, _proof1, _proof2, _publicSignals);
+		//bool result = true;
+		console.log("Proof verifier(owner):", result);
+		//require(result);
 
 		// If valid owner forward the nonce (challenge) to lock
 		GuestSession memory gCtx;
 		gCtx = guestSessions[_guest];
 		gCtx.ownernonce = _nonce; 						 
 		console.log("Responding to Auth from guest");
-		emit RespondAuth (owner, _guest, gCtx);
+		emit RespondAuth (owner, _guest, gCtx, result);
 	}
 
 	// Register potential guest

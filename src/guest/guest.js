@@ -2,17 +2,50 @@ const hre = require("hardhat");
 const { HandshakeIntf } = require("./interface/handshake_intf.js");
 var hsm = require('./interface/hsm.js');
 const BN = require("bn.js");
+const prompt = require("prompt-sync")({sigint: true});
+const { GuestProver } = require("./prover.js");
+var elliptic = require('elliptic');
+var EC = elliptic.ec;
 
 class LockNetwork extends HandshakeIntf {
-	constructor() {
+	constructor(_privKey) {
 		super();
 		this.samplelock = null;
 		this.Lock = null;
 		this.deployedAddress = null;
 		this.guest = null;
     this.owner = null;
+    this.guestprover = new GuestProver();
+
 		console.log("Lock net init.");
 		this.buildContractEventHandler();
+    const ec = new EC('secp256k1');
+
+    // Generates a wallet from the signers private key
+    // and signs the given message hash 
+    this.signMsgViaSecret = function (_msg) {
+
+      // Create a wallet to sign the hash with
+      //let wallet = new hre.ethers.Wallet(_privKey);
+
+      //console.log("wallet.address:" + wallet.address);
+
+      let key = ec.genKeyPair();
+      let privkey = key.getPrivate();
+      let pubkey = key.getPublic();
+
+      let signature = ec.sign(_msg, privkey);
+      //let pubkey = ec.keyFromSecret(secret);
+
+      console.log("privkey:" + privkey);
+      console.log("pubkey(x):" + pubkey.x);
+      console.log("pubkey(y):" + pubkey.y);
+      console.log("signature(r):" + signature.r);
+      console.log("signature(s):" + signature.s);
+
+      return {r: signature.r, s: signature.s, pubkey: pubkey};
+    }
+
 	}
 }
 
@@ -20,7 +53,7 @@ class LockNetwork extends HandshakeIntf {
 LockNetwork.prototype.connect = async function () {
 
 	this.Lock = await hre.ethers.getContractFactory('LockZKP');
-	this.samplelock = await this.Lock.attach('0xf5059a5D33d5853360D16C683c16e67980206f36');
+	this.samplelock = await this.Lock.attach('0x322813Fd9A801c5507c9de605d63CEA4f2CE6c44');
 	
 	console.log(`Attached to LockNetwork contract`);
 	var deployer, owner;
@@ -48,13 +81,13 @@ LockNetwork.prototype.registerEvents = async function () {
 		return;
 	});
 
-  filter = this.samplelock.filters.RespondAuth(null, this.guest, null);
+  filter = this.samplelock.filters.RespondAuth(null, this.guest, null, null);
   this.samplelock.on(filter, (result) => {
 
     console.log("We have been approved by owner..");
     console.log("Guest:" + result.args.guest);
     console.log("Owner:" + result.args.owner);
-    console.log("Owner(approved):" + this.owner);
+    console.log("Owner verified?:" + result.args.isOwnerVerfied);
     console.log("Ctx:" + result.args.ctx);
     let nonce = result.args.ctx.ownernonce;
 
@@ -114,7 +147,21 @@ LockNetwork.prototype.reqAuth = async function (nonce) {
 
 	const challenge = {nonce0, nonce1, seed, counter, hmac};
 
-	await this.samplelock.connect(this.guest).reqAuth(challenge);
+  // Off chain off channel secret
+  //const secret = prompt('Enter secret');
+  
+  // Calculate signature of the message 'guest'
+  let msghash = ethers.id("guest");
+
+  const sign = this.signMsgViaSecret(msghash);
+  console.log("Sign:" + JSON.stringify(sign));
+
+  // Generate proof
+  let { proof, publicSignals } = await this.guestprover.prove(
+                            sign.r, sign.s, sign.pubkey, msghash); 
+
+	await this.samplelock.connect(this.guest).reqAuth(challenge,
+                    proof[0], proof[1], proof[2], publicSignals);
 }
 
 var locknet = new LockNetwork();

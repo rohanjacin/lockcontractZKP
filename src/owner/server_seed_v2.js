@@ -24,6 +24,8 @@ ServerSeed = function ServerSeed () {
 	this.pswd = Private.server_password;
 	this.lock_pm = Private.lock_pm;
 	this.lock_pub = 0;
+	this.cipherPt1 = 0;
+	this.cipherPt2 = 0;
 
 	this.Pm = C.point(this.pswd[0], this.pswd[1]);
 	console.log("PM:" + this.Pm.x);
@@ -151,6 +153,9 @@ ServerSeed.prototype.retrieveSeed = function (pub, seed) {
 		console.log("Cipher P2 InValid point on curve");
 		return ret;
 	}
+
+	this.cipherPt1 = cipher_point_1;
+	this.cipherPt2 = cipher_point_2;
 
 	//console.log("server private key:" + server_priv);
 	//console.log("lock private key:" + lock_priv);
