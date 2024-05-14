@@ -1,19 +1,24 @@
 const hre = require("hardhat");
 
+// Interface to the Lock network
 class LockNetwork {
 	constructor() {
+		// Lock contract objects
 		this.samplelock = null;
 		this.Lock = null;
 		this.deployedAddress = null;
 
+		// Auction contract objects
 		this.auction = null;
 		this.Auction = null;
 		this.auctionAddress = null;
 
+		// Owner proof verifier objects
 		this.ownerverifier = null;
 		this.OwnerVerifier = null;
 		this.ownerverifierAddress = null;
 
+		// Guest proof verifier objects
 		this.guestverifier = null;
 		this.GuestVerifier = null;
 		this.guestverifierAddress = null;
@@ -25,22 +30,25 @@ class LockNetwork {
 // Connects to the Lock contract
 LockNetwork.prototype.deploy = async function () {
 
+	// Deploys auction contract
 	this.Auction = await hre.ethers.getContractFactory('Auction');
 	this.auction = await this.Auction.deploy();
 	await this.auction.waitForDeployment();
 	this.auctionAddress = await this.auction.getAddress(); 
 
+	// Deploys owner proof verifier contract
 	this.OwnerVerifier = await hre.ethers.getContractFactory('Groth16Verifier');
 	this.ownerverifier = await this.OwnerVerifier.deploy();
 	await this.ownerverifier.waitForDeployment();
 	this.ownerverifierAddress = await this.ownerverifier.getAddress(); 
 
+	// Deploys guest proof verifier contract
 	this.GuestVerifier = await hre.ethers.getContractFactory('GuestVerifier');
 	this.guestverifier = await this.GuestVerifier.deploy();
 	await this.guestverifier.waitForDeployment();
 	this.guestverifierAddress = await this.guestverifier.getAddress(); 
 
-
+	// Deploys lock contract
 	this.Lock = await hre.ethers.getContractFactory('LockZKP');
 	this.samplelock = await this.Lock.deploy('samplelock', this.auctionAddress,
 											  this.ownerverifierAddress,
@@ -49,11 +57,13 @@ LockNetwork.prototype.deploy = async function () {
 	this.deployedAddress = await this.samplelock.getAddress(); 
 	console.log(`Deployed to ${this.deployedAddress}`);
 	
+	// Register for events from Owner, Guest, network.
 	this.registerEvents();
 }
 
 LockNetwork.prototype.registerEvents = async function () {
 
+	// Bidding open after Owner registers
 	let filter = this.samplelock.filters.BidRoomNow(null, null);
 	this.samplelock.on(filter, (result) => {
 
@@ -63,6 +73,7 @@ LockNetwork.prototype.registerEvents = async function () {
 		return;
 	});
 
+	// Guest registers after after winning bid
 	filter = this.samplelock.filters.GuestRegistered(null, null);
 	this.samplelock.on(filter, (result) => {
 
@@ -72,6 +83,7 @@ LockNetwork.prototype.registerEvents = async function () {
 		return;
 	});
 
+	// Guest approved by owner
 	filter = this.samplelock.filters.GuestApproved(null, null, null);
 	this.samplelock.on(filter, (result) => {
 
