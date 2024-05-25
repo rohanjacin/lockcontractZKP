@@ -4,8 +4,13 @@ var hsm = require('./interface/hsm.js');
 const BN = require("bn.js");
 const prompt = require("prompt-sync")({sigint: true});
 const { GuestProver } = require("./prover.js");
+const { Identity } = require("@semaphore-protocol/identity");
+const { Group } = require("@semaphore-protocol/group");
+const { generateProof } = require("@semaphore-protocol/proof");
+const fs = require("fs");
+
 var elliptic = require('elliptic');
-var EC = elliptic.ec;
+var EC = elliptic.ec
 
 class LockNetwork extends HandshakeIntf {
 	constructor(_privKey) {
@@ -15,52 +20,60 @@ class LockNetwork extends HandshakeIntf {
 		this.deployedAddress = null;
 		this.guest = null;
     this.owner = null;
-    this.guestprover = new GuestProver();
+    //this.guestprover = new GuestProver();
+    this.ownerGroup = null;
+    this.proof = null;
+    this.group = null;
+    this.identity = null;
+    this.buildContractEventHandler();
 
-		console.log("Lock net init.");
-		this.buildContractEventHandler();
-    const ec = new EC('secp256k1');
+    // Using Semaphore-protocol for identity 
+    // proofs for group membership (so that family
+    // members can skip placing a bid for the room)
+    let createMembership = function () {
 
-    // Generates a wallet from the signers private key
-    // and signs the given message hash 
-    this.signMsgViaSecret = function (_msg) {
+      fs.readFile('groupPreshared.json', function (err, data) {
+          if (err) throw err;
+          
+          let _group = JSON.parse(data);
+          this.secret = _group.secret;
+          console.log("secret:" + this.secret);
+          
+          this.ownerGroup = new Group(_group.group[0]);
+          console.log("this.ownerGroup:", this.ownerGroup);
 
-      // Create a wallet to sign the hash with
-      //let wallet = new hre.ethers.Wallet(_privKey);
+          let member = [this.ownerGroup.members[0], this.ownerGroup.members[1],
+                         this.ownerGroup.members[2]];
+          let root = this.ownerGroup.root;
 
-      //console.log("wallet.address:" + wallet.address);
+          // Create the group for contract interaction 
+          this.group = {member, root};
+          this.identity = new Identity(this.secret);
 
-      let key = ec.genKeyPair();
-      let privkey = key.getPrivate();
-      let pubkey = key.getPublic();
+          if (-1 != this.ownerGroup.indexOf(this.identity.commitment))
+            console.log("Identity part of owner group");
 
-      let signature = ec.sign(_msg, privkey);
-      //let pubkey = ec.keyFromSecret(secret);
+      }.bind(this));
 
-      console.log("privkey:" + privkey);
-      console.log("pubkey(x):" + pubkey.x);
-      console.log("pubkey(y):" + pubkey.y);
-      console.log("signature(r):" + signature.r);
-      console.log("signature(s):" + signature.s);
+    }.bind(this);
 
-      return {r: signature.r, s: signature.s, pubkey: pubkey};
-    }
-
-	}
+    createMembership();
+    console.log("Lock net init.");
+  }
 }
 
 // Connects to the Lock contract
 LockNetwork.prototype.connect = async function () {
 
 	this.Lock = await hre.ethers.getContractFactory('LockZKP');
-	this.samplelock = await this.Lock.attach('0x322813Fd9A801c5507c9de605d63CEA4f2CE6c44');
+	this.samplelock = await this.Lock.attach('0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9');
 	
 	console.log(`Attached to LockNetwork contract`);
 	var deployer, owner;
 	[deployer, owner, this.guest] = await hre.ethers.getSigners();
 	
 	this.registerEvents();
-	this.requestRoom();
+  await this.requestRoom();
 }
 
 LockNetwork.prototype.registerEvents = async function () {
@@ -132,7 +145,14 @@ LockNetwork.prototype.buildContractEventHandler = async function () {
 LockNetwork.prototype.requestRoom = async function () {
 	let bidPrice = hre.ethers.parseEther('100', 'wei'); // bid price for room
 
-	await this.samplelock.connect(this.guest).registerGuest({value: bidPrice});
+  // Identity exists, generate proof
+  let scope = this.group.root;
+  let message = "hello";
+
+  this.proof = await generateProof(this.identity, this.ownerGroup, message, scope);
+
+  await this.samplelock.connect(this.guest).
+      registerGuest(this.group, this.proof, {value: bidPrice});
 
 	console.log("We requested room as guest");
 }
@@ -147,28 +167,20 @@ LockNetwork.prototype.reqAuth = async function (nonce) {
 
 	const challenge = {nonce0, nonce1, seed, counter, hmac};
 
-  // Off chain off channel secret
-  //const secret = prompt('Enter secret');
-  
-  // Calculate signature of the message 'guest'
-  let msghash = ethers.id("guest");
+  // Identity exists, generate proof
+  let scope = this.group.root;
+  let message = "let-me-in";
 
-  const sign = this.signMsgViaSecret(msghash);
-  console.log("Sign:" + JSON.stringify(sign));
+  this.proof = await generateProof(this.identity, this.ownerGroup, message, scope);
 
-  // Generate proof
-  let { proof, publicSignals } = await this.guestprover.prove(
-                            sign.r, sign.s, sign.pubkey, msghash); 
-
-	await this.samplelock.connect(this.guest).reqAuth(challenge,
-                    proof[0], proof[1], proof[2], publicSignals);
+	await this.samplelock.connect(this.guest).reqAuth(challenge, this.group, this.proof);
 }
 
 var locknet = new LockNetwork();
 
 locknet.connect().catch((error) => {
-	console.error(error);
-	process.exitCode = 1;	
+  console.error(error);
+  process.exitCode = 1; 
 });
 
 locknet.on('state_event', (event) => {

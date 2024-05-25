@@ -3,6 +3,9 @@ const { ServerHandshake } = require("./server_handshake.js");
 var hsm = require('./hsm.js');
 const BN = require("bn.js");
 const { LockProver } = require("./prover.js");
+const { Identity } = require("@semaphore-protocol/identity");
+const { Group } = require("@semaphore-protocol/group");
+const { generateProof } = require("@semaphore-protocol/proof");
 
 class LockNetwork extends ServerHandshake {
 	constructor() {
@@ -13,8 +16,37 @@ class LockNetwork extends ServerHandshake {
 		this.owner = null;
     this.guest = null;
     this.lockprover = new LockProver();
+    this.proof = null;
+    this.ownerGroup = null;
+    this.group = null;
+    this.identity = null;
+    this.deployer;
     this.buildContractEventHandler();
-		console.log("Lock net init.");
+
+    // Using Semaphore-protocol for identity 
+    // proofs for group membership (so that family
+    // members can skip placing a bid for the room)
+    let createMembership = async function () {
+      // Create identities for family members
+      const identity1 = new Identity("self-secret");
+      const identity2 = new Identity("spouse-secret");
+      const identity3 = new Identity("kid-secret");
+
+      const members = [identity1.commitment, identity2.commitment,
+                       identity3.commitment];
+      this.identity = identity1;
+      this.ownerGroup = new Group(members);
+      console.log("Group(exported json):" + this.ownerGroup.export());
+
+      let member = [this.ownerGroup.members[0], this.ownerGroup.members[1],
+                    this.ownerGroup.members[2]];
+      let root = this.ownerGroup.root;
+      this.group = {member, root};
+
+    }.bind(this);   
+
+    createMembership();
+    console.log("Lock net init.");
 	}
 }
 
@@ -22,13 +54,13 @@ class LockNetwork extends ServerHandshake {
 LockNetwork.prototype.connect = async function () {
 
 	this.Lock = await hre.ethers.getContractFactory('LockZKP');
-	this.samplelock = await this.Lock.attach('0x322813Fd9A801c5507c9de605d63CEA4f2CE6c44');
-	console.log(`Attached to LockNetwork contract`);
+	this.samplelock = await this.Lock.attach('0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9');
+  console.log(`Attached to LockNetwork contract`);
 	var deployer;
-	[deployer, this.owner] = await hre.ethers.getSigners();
+	[this.deployer, this.owner] = await hre.ethers.getSigners();
 
 	this.registerEvents();
-	this.registerRoom();
+	await this.registerRoom();
 }
 
 // Registers for event from the lock handshake interface which
@@ -46,7 +78,7 @@ LockNetwork.prototype.buildContractEventHandler = async function () {
 LockNetwork.prototype.registerEvents = async function () {
 
 	// When guest is registered
-	let filter = this.samplelock.filters.GuestRegistered(null, this.owner);
+	filter = this.samplelock.filters.GuestRegistered(null, this.owner);
 	this.samplelock.on(filter, (result) => {
 
 		console.log("guest:" + result.args.guest);
@@ -58,7 +90,6 @@ LockNetwork.prototype.registerEvents = async function () {
 
 	// When guest request authentication
 	filter = this.samplelock.filters.RequestAuth(null, this.owner, null);
-	console.log("filter:" + Object.keys(filter));
 	this.samplelock.on(filter, (result) => {
 
     console.log("Event for request authentication:" + state);
@@ -102,8 +133,15 @@ LockNetwork.prototype.registerRoom = async function () {
 	let basePrice = 100; // base price for room
 	let ipfsHash = "dummy"; // connect to off-chain db later
 
-	await this.samplelock.connect(this.owner).registerOwner(basePrice, ipfsHash);
-	console.log("We registered room as owner");
+  let message = "hello";
+  let scope = this.ownerGroup.root;
+  this.proof = await generateProof(this.identity, this.ownerGroup,
+                                   message, scope);
+
+	await this.samplelock.connect(this.owner).registerOwner(basePrice,
+              ipfsHash, this.group, this.proof);
+
+	console.log("We registered room as owner:");
 }
 
 // Approves the guest with the winning bid
@@ -142,14 +180,15 @@ LockNetwork.prototype.responseAuth = async function (guest, nonce) {
 
 var locknet = new LockNetwork();
 
-locknet.connect().catch((error) => {
-	console.error(error);
-	process.exitCode = 1;	
-});
 
 locknet.on('state_event', (event) => {
 
   state = machine.transition(state, event);
+});
+
+locknet.connect().catch((error) => {
+  console.error(error);
+  process.exitCode = 1; 
 });
 
 const machine = hsm.createMachine({

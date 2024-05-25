@@ -18,10 +18,10 @@ class LockNetwork {
 		this.OwnerVerifier = null;
 		this.ownerverifierAddress = null;
 
-		// Guest proof verifier objects
-		this.guestverifier = null;
-		this.GuestVerifier = null;
-		this.guestverifierAddress = null;
+		// Group proof verifier objects
+		this.groupverifier = null;
+		this.GroupVerifier = null;
+		this.groupverifierAddress = null;
 
 		console.log("Lock net init.");
 	}
@@ -43,20 +43,23 @@ LockNetwork.prototype.deploy = async function () {
 	this.ownerverifierAddress = await this.ownerverifier.getAddress(); 
 
 	// Deploys guest proof verifier contract
-	this.GuestVerifier = await hre.ethers.getContractFactory('GuestVerifier');
-	this.guestverifier = await this.GuestVerifier.deploy();
-	await this.guestverifier.waitForDeployment();
-	this.guestverifierAddress = await this.guestverifier.getAddress(); 
+	// SemaphoreVerifier.sol from @semaphore-protocol/contracts
+	this.GroupVerifier = await hre.ethers.getContractFactory('SemaphoreVerifier');
+	this.groupverifier = await this.GroupVerifier.deploy();
+	await this.groupverifier.waitForDeployment();
+	this.groupverifierAddress = await this.groupverifier.getAddress(); 
 
 	// Deploys lock contract
 	this.Lock = await hre.ethers.getContractFactory('LockZKP');
 	this.samplelock = await this.Lock.deploy('samplelock', this.auctionAddress,
 											  this.ownerverifierAddress,
-											  this.guestverifierAddress);
+											  this.groupverifierAddress);
 	await this.samplelock.waitForDeployment();
 	this.deployedAddress = await this.samplelock.getAddress(); 
 	console.log(`Deployed to ${this.deployedAddress}`);
 	
+	//console.log("this.samplelock:",Object.keys(this.samplelock.runner.provider._hardhatProvider._emitter._events));
+	//Object.keys(this.owner.provider._hardhatProvider._emitter._events)
 	// Register for events from Owner, Guest, network.
 	this.registerEvents();
 }
