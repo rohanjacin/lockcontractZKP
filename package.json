@@ -20,6 +20,7 @@
     "@nomicfoundation/hardhat-ignition-ethers": "^0.15.1",
     "@nomicfoundation/hardhat-toolbox": "^5.0.0",
     "hardhat": "^2.22.3",
+    "hardhat-contract-sizer": "^2.10.0",
     "hardhat-dependency-compiler": "^1.1.4"
   },
   "dependencies": {

@@ -1,7 +1,7 @@
 const hre = require("hardhat");
-const { ServerHandshake } = require("./server_handshake.js");
 var hsm = require('./hsm.js');
 const BN = require("bn.js");
+const { ServerHandshake } = require("./server_handshake.js");
 const { LockProver } = require("./prover.js");
 const { Identity } = require("@semaphore-protocol/identity");
 const { Group } = require("@semaphore-protocol/group");
@@ -20,7 +20,7 @@ class LockNetwork extends ServerHandshake {
     this.ownerGroup = null;
     this.group = null;
     this.identity = null;
-    this.deployer;
+    this.deployer = null;
     this.buildContractEventHandler();
 
     // Using Semaphore-protocol for identity 
@@ -53,7 +53,12 @@ class LockNetwork extends ServerHandshake {
 // Connects to the Lock contract
 LockNetwork.prototype.connect = async function () {
 
-	this.Lock = await hre.ethers.getContractFactory('LockZKP');
+	this.Lock = await hre.ethers.getContractFactory('LockZKP', {
+    libraries: {
+      Auction: '0x5fbdb2315678afecb367f032d93f642f64180aa3'
+    }    
+  });
+
 	this.samplelock = await this.Lock.attach('0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9');
   console.log(`Attached to LockNetwork contract`);
 	var deployer;
@@ -95,12 +100,11 @@ LockNetwork.prototype.registerEvents = async function () {
     console.log("Event for request authentication:" + state);
 		console.log("Guest:" + result.args.guest);
 		console.log("Owner:" + result.args.owner);
-		console.log("Ctx:" + result.args.ctx);
-		console.log("Lock Nonce:" + result.args.ctx.locknonce);
+		console.log("Lock Nonce:" + result.args.nonce);
 
     this.guest = result.args.guest;
 
-    let locknonce = result.args.ctx.locknonce;
+    let locknonce = result.args.nonce;
     let nonce0 = locknonce[0].split("0x");
     let nonce1 = locknonce[1].split("0x");
     let seed = locknonce[2].split("0x");

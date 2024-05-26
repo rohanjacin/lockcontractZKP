@@ -65,7 +65,12 @@ class LockNetwork extends HandshakeIntf {
 // Connects to the Lock contract
 LockNetwork.prototype.connect = async function () {
 
-	this.Lock = await hre.ethers.getContractFactory('LockZKP');
+  this.Lock = await hre.ethers.getContractFactory('LockZKP', {
+    libraries: {
+      Auction: '0x5fbdb2315678afecb367f032d93f642f64180aa3'
+    }    
+  });
+
 	this.samplelock = await this.Lock.attach('0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9');
 	
 	console.log(`Attached to LockNetwork contract`);
@@ -73,10 +78,18 @@ LockNetwork.prototype.connect = async function () {
 	[deployer, owner, this.guest] = await hre.ethers.getSigners();
 	
 	this.registerEvents();
-  await this.requestRoom();
 }
 
 LockNetwork.prototype.registerEvents = async function () {
+
+  filter = this.samplelock.filters.BidRoomNow(null, null);
+  this.samplelock.on(filter, (result) => {
+    console.log("Owner started the auction..");
+    console.log("Owner:" + result.args.owner);
+    this.owner = result.args.owner;
+
+    this.requestRoom();   
+  });
 
 	filter = this.samplelock.filters.GuestApproved(this.guest, null, null);
 	this.samplelock.on(filter, (result) => {
@@ -84,13 +97,13 @@ LockNetwork.prototype.registerEvents = async function () {
 		console.log("We have been approved by owner..");
 		console.log("Guest:" + result.args.guest);
 		console.log("Owner:" + result.args.owner);
-		console.log("Ctx:" + result.args.ctx);
-		let nonce0 = result.args.ctx.nonce0;
-		nonce0 = nonce0.split("0x");
-		console.log("nonce0:" + nonce0);
+		console.log("Nonce:" + result.args.nonce);
+		let nonce = result.args.nonce;
+		nonce = nonce.split("0x");
+		console.log("nonce0:" + nonce);
 
     this.owner = result.args.owner;
-    this.sendRequest(nonce0[1]);		
+    this.sendRequest(nonce[1]);		
 		return;
 	});
 
@@ -101,8 +114,8 @@ LockNetwork.prototype.registerEvents = async function () {
     console.log("Guest:" + result.args.guest);
     console.log("Owner:" + result.args.owner);
     console.log("Owner verified?:" + result.args.isOwnerVerfied);
-    console.log("Ctx:" + result.args.ctx);
-    let nonce = result.args.ctx.ownernonce;
+    console.log("Nonce:" + result.args.nonce);
+    let nonce = result.args.nonce;
 
     let nonce0 = nonce[0].split("0x");
     let nonce1 = nonce[1].split("0x");
@@ -152,7 +165,8 @@ LockNetwork.prototype.requestRoom = async function () {
   this.proof = await generateProof(this.identity, this.ownerGroup, message, scope);
 
   await this.samplelock.connect(this.guest).
-      registerGuest(this.group, this.proof, {value: bidPrice});
+      registerGuest(this.owner, this.group,
+              this.proof, {value: bidPrice});
 
 	console.log("We requested room as guest");
 }
@@ -173,7 +187,8 @@ LockNetwork.prototype.reqAuth = async function (nonce) {
 
   this.proof = await generateProof(this.identity, this.ownerGroup, message, scope);
 
-	await this.samplelock.connect(this.guest).reqAuth(challenge, this.group, this.proof);
+	await this.samplelock.connect(this.guest).
+      reqAuth(this.owner, challenge, this.group, this.proof);
 }
 
 var locknet = new LockNetwork();
