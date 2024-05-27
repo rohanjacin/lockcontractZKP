@@ -78,7 +78,7 @@ ServerHandshake.prototype.sendRequest = async function () {
   Pb = Pb.toBuffer(32);
   //this.frame.sendFrame('Request', Pb);
   this.postEvent('request');
-  return {type: "Request", nonce0: Pb};
+  return {type: "Request", nonce: Pb};
 }
 
 ServerHandshake.prototype.waitChallenge = function () {

@@ -1,5 +1,5 @@
 {
-    "serverHost": "0.0.0.0",
+    "serverHost": "127.0.0.1",
     "port": 21000,
     "timeout": 10000,
     "logdir": "log/server/"

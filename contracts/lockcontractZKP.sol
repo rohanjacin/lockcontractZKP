@@ -32,11 +32,6 @@ struct SemaphoreProof {
     uint256[8] points;
 }
 
-struct Group {
-	uint256[3] member;
-	uint256 root;
-}
-
 // Session context for guests
 struct GuestSession {
 	uint256 id; // guest identification
@@ -53,7 +48,7 @@ struct OwnerSession {
 	uint256 id; // owner identification
 	uint256 counter; // random counter
 	uint256 basePrice; // bid
-	Group group; // group 		
+	uint256 groupRoot; // group id 		
 	//bytes nonce; // epherium public key (65 bytes) 
 }
 
@@ -95,7 +90,6 @@ contract LockZKP {
 
     bool public ownerRegistered;
 	uint constant BID_INCREMENT = 10;
-    Group public ownerGroup;
 
 	constructor (string memory _name,  address _ownerverifier,
 				 address _groupverifier) {
@@ -121,15 +115,16 @@ contract LockZKP {
 	// When owner request's for bidding of the room	
 	event BidRoomNow (address indexed owner, uint256 price);
 
-	// When guest registers and wins bid
-	event GuestRegistered (address indexed guest, address indexed owner);
+	// When guest registers and wins bid or is a group member
+	event GuestRegistered (address indexed guest, address indexed owner,
+						   uint256 bid, uint256 groupRoot);
 
 	// When guest is approved
 	event GuestApproved (address indexed guest, address indexed owner, bytes nonce);
 
 	// Register an Owner for the property
 	function registerOwner (uint _basePrice, string memory _ipfsHash,
-							Group calldata _group, SemaphoreProof calldata proof)
+							uint256 _groupRoot, SemaphoreProof calldata proof)
 		public onlyNoOwnerRegistered (msg.sender) {
 		
 		// Validate owner proof here (from Semaphore.sol @semaphore-protocol/contracts)
@@ -141,13 +136,13 @@ contract LockZKP {
             proof.merkleTreeDepth
         );
 
-        console.log("resulr:", result);
+        console.log("result:", result);
         require(result);
 
         // Add owner
         OwnerSession memory ownerCtx;
 		ownerCtx.registered = true;
-		ownerCtx.group = _group;
+		ownerCtx.groupRoot = _groupRoot;
 
         ownerSessions[msg.sender] = ownerCtx;
 
@@ -162,8 +157,7 @@ contract LockZKP {
 	}
 
 	// Register potential guest
-	function registerGuest (address _owner, Group calldata _group,
-							SemaphoreProof calldata proof)
+	function registerGuest (address _owner, SemaphoreProof calldata proof)
 		public payable 
 		onlyIfOwnerExistsAndRegistered (_owner)
 		returns (bool success) {
@@ -173,7 +167,7 @@ contract LockZKP {
 
 		// If this guest is part of the owner's group
 		// skip the auction process
-        if (proof.merkleTreeRoot == ownerCtx.group.root) {
+        if (proof.merkleTreeRoot == ownerCtx.groupRoot) {
 			// Validate owner proof here (from Semaphore.sol @semaphore-protocol/contracts)
 	        bool result = ISemaphoreVerifier(groupverifier).verifyProof(
 	            [proof.points[0], proof.points[1]],
@@ -185,17 +179,21 @@ contract LockZKP {
 
 	        require(result);
 
-	        guestCtx.groupRoot = ownerCtx.group.root;
+	        guestCtx.groupRoot = ownerCtx.groupRoot;
         	console.log("Registering owner's guest..:", msg.value);
+		
+			emit GuestRegistered (msg.sender, _owner, msg.value,
+								  ownerCtx.groupRoot);        
         }
         else {
-	        guestCtx.groupRoot = ownerCtx.group.root;
+	        guestCtx.groupRoot = ownerCtx.groupRoot;
 			console.log("Registering guest..:", msg.value);
 			Auction.placeBid(_owner);
+
+			emit GuestRegistered (msg.sender, _owner, msg.value, 0);
         }
 
 		guestSessions[msg.sender] = guestCtx;
-		emit GuestRegistered (msg.sender, _owner);
 		
 		return (true);
 	}
@@ -217,7 +215,7 @@ contract LockZKP {
 
 		// If Owner's guest is part of the owner's group
 		// skip the auction process
-		if (guestCtx.groupRoot != ownerCtx.group.root) {
+		if (guestCtx.groupRoot != ownerCtx.groupRoot) {
 
 			// Only accept the first guest currently, then cancel auction
 			Auction.cancelAuction(msg.sender);
@@ -250,15 +248,15 @@ contract LockZKP {
 
 	// Guest requesting authenication on arrival
 	function reqAuth (address _owner, LockNonce memory _nonce,
-					  Group calldata _group, SemaphoreProof calldata proof)
+					  SemaphoreProof calldata proof)
 		public onlyNotOwner onlyValidGuest (msg.sender) {
 
 		GuestSession memory guestCtx = guestSessions[msg.sender];
 		OwnerSession memory ownerCtx = ownerSessions[_owner];
 
 		// If this guest is part of the owner's group validate its proof
-        if ((proof.merkleTreeRoot == ownerCtx.group.root) && 
-            (guestCtx.groupRoot == ownerCtx.group.root)) {
+        if ((proof.merkleTreeRoot == ownerCtx.groupRoot) && 
+            (guestCtx.groupRoot == ownerCtx.groupRoot)) {
 
 			// Validate guest proof here (from Semaphore.sol @semaphore-protocol/contracts)
 	        bool result = ISemaphoreVerifier(groupverifier).verifyProof(

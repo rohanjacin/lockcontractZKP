@@ -40,7 +40,6 @@ class LockNetwork extends HandshakeIntf {
           console.log("secret:" + this.secret);
           
           this.ownerGroup = new Group(_group.group[0]);
-          console.log("this.ownerGroup:", this.ownerGroup);
 
           let member = [this.ownerGroup.members[0], this.ownerGroup.members[1],
                          this.ownerGroup.members[2]];
@@ -74,9 +73,9 @@ LockNetwork.prototype.connect = async function () {
 	this.samplelock = await this.Lock.attach('0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9');
 	
 	console.log(`Attached to LockNetwork contract`);
-	var deployer, owner;
-	[deployer, owner, this.guest] = await hre.ethers.getSigners();
-	
+  let _guests = await hre.ethers.getSigners();
+  this.guest = _guests[process.env.SIGNER_INDEX];
+
 	this.registerEvents();
 }
 
@@ -156,7 +155,7 @@ LockNetwork.prototype.buildContractEventHandler = async function () {
 }
 
 LockNetwork.prototype.requestRoom = async function () {
-	let bidPrice = hre.ethers.parseEther('100', 'wei'); // bid price for room
+	let bidPrice = hre.ethers.parseEther('100', 'gwei'); // bid price for room
 
   // Identity exists, generate proof
   let scope = this.group.root;
@@ -164,9 +163,10 @@ LockNetwork.prototype.requestRoom = async function () {
 
   this.proof = await generateProof(this.identity, this.ownerGroup, message, scope);
 
+  console.log("\nProof:", this.proof);
+  
   await this.samplelock.connect(this.guest).
-      registerGuest(this.owner, this.group,
-              this.proof, {value: bidPrice});
+      registerGuest(this.owner, this.proof, {value: bidPrice});
 
 	console.log("We requested room as guest");
 }
@@ -188,7 +188,7 @@ LockNetwork.prototype.reqAuth = async function (nonce) {
   this.proof = await generateProof(this.identity, this.ownerGroup, message, scope);
 
 	await this.samplelock.connect(this.guest).
-      reqAuth(this.owner, challenge, this.group, this.proof);
+      reqAuth(this.owner, challenge, this.proof);
 }
 
 var locknet = new LockNetwork();

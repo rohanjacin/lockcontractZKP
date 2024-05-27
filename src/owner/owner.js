@@ -1,5 +1,6 @@
 const hre = require("hardhat");
 var hsm = require('./hsm.js');
+var utils = require('./utils.js');
 const BN = require("bn.js");
 const { ServerHandshake } = require("./server_handshake.js");
 const { LockProver } = require("./prover.js");
@@ -15,22 +16,29 @@ class LockNetwork extends ServerHandshake {
 		this.deployedAddress = null;
 		this.owner = null;
     this.guest = null;
+    this.guests = [];
+    this.timer = null;
     this.lockprover = new LockProver();
     this.proof = null;
     this.ownerGroup = null;
     this.group = null;
     this.identity = null;
-    this.deployer = null;
+    this.bidTimer = null;
+    this.bidCountSecs = 10000;
+
+
     this.buildContractEventHandler();
 
     // Using Semaphore-protocol for identity 
     // proofs for group membership (so that family
     // members can skip placing a bid for the room)
     let createMembership = async function () {
+
+      const _secret = process.env.SECRET;
       // Create identities for family members
-      const identity1 = new Identity("self-secret");
-      const identity2 = new Identity("spouse-secret");
-      const identity3 = new Identity("kid-secret");
+      const identity1 = new Identity("self"+_secret);
+      const identity2 = new Identity("spouse"+_secret);
+      const identity3 = new Identity("kid"+_secret);
 
       const members = [identity1.commitment, identity2.commitment,
                        identity3.commitment];
@@ -61,8 +69,8 @@ LockNetwork.prototype.connect = async function () {
 
 	this.samplelock = await this.Lock.attach('0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9');
   console.log(`Attached to LockNetwork contract`);
-	var deployer;
-	[this.deployer, this.owner] = await hre.ethers.getSigners();
+	let _owners = await hre.ethers.getSigners();
+  this.owner = _owners[process.env.SIGNER_INDEX];
 
 	this.registerEvents();
 	await this.registerRoom();
@@ -88,8 +96,35 @@ LockNetwork.prototype.registerEvents = async function () {
 
 		console.log("guest:" + result.args.guest);
 		console.log("owner:" + result.args.owner);
+    console.log("bid:" + result.args.bid);
+    console.log("groupRoot:" + result.args.groupRoot);
 
-		this.approveGuest(result.args.guest);
+    let _groupRoot = result.args.groupRoot;
+    let _bid = result.args.bid;
+    let _guest = result.args.guest;
+
+    // If the guest is not a group member
+    if (!_groupRoot) {
+      // Add guests to the list
+      this.guests.push({address: _guest, bid: _bid});
+
+      // Allow for other guests to bid
+      if (!this.bidTimer) {
+          this.bidTimer = setInterval(() => {
+
+            this.bidCountSecs--; 
+
+            if (this.bidCountSecs < 0) {
+
+              this.guest = utils.highestBiddingGuest(this.guests);
+              clearInterval(this.bidTimer);
+
+              console.log("this.guest:" + this.guest);
+              this.approveGuest(this.guest);
+            }
+          });
+      }
+    }
 		return;
 	});
 
@@ -142,8 +177,9 @@ LockNetwork.prototype.registerRoom = async function () {
   this.proof = await generateProof(this.identity, this.ownerGroup,
                                    message, scope);
 
+  console.log("\nPROOF:", this.proof);
 	await this.samplelock.connect(this.owner).registerOwner(basePrice,
-              ipfsHash, this.group, this.proof);
+              ipfsHash, this.group.root, this.proof);
 
 	console.log("We registered room as owner:");
 }
@@ -151,12 +187,12 @@ LockNetwork.prototype.registerRoom = async function () {
 // Approves the guest with the winning bid
 LockNetwork.prototype.approveGuest = async function (guest) {
 
-	let {type, nonce0} = await this.sendRequest();
+	let {type, nonce} = await this.sendRequest();
 	console.log("type:" + type);
-	console.log("nonce0:" + nonce0.toString());
-	nonce0 = Uint8Array.from(nonce0.slice(0, 65));
+	console.log("nonce:" + nonce.toString());
+	nonce = Uint8Array.from(nonce.slice(0, 65));
 
-	await this.samplelock.connect(this.owner).approveGuest(guest, nonce0);
+	await this.samplelock.connect(this.owner).approveGuest(guest, nonce);
 	console.log("We approved the guest");
 }
 

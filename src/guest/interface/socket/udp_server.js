@@ -94,12 +94,15 @@ UdpServer.prototype.sendFrame = function (type, data) {
     console.log("frame:" + JSON.stringify(frame));
     const buf = Buffer.from(JSON.stringify(frame))
 
+    console.log("conf.port:" + conf.port);
+    console.log("typeof conf.port:" + typeof(conf.port));
+
     client.send(buf, conf.port, conf.host, error => {
         if (error) {
             console.log(error)
             client.close()
         } else {
-            //console.log('Frame sent !!!')
+            console.log('Frame sent !!!')
         }
     })
 }
