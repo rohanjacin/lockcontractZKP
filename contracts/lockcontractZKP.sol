@@ -163,7 +163,7 @@ contract LockZKP {
 		returns (bool success) {
 		uint _finalPrice;
 		GuestSession memory guestCtx;
-		OwnerSession memory ownerCtx;
+		OwnerSession memory ownerCtx = ownerSessions[_owner];
 
 		// If this guest is part of the owner's group
 		// skip the auction process
