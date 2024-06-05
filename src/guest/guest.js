@@ -2,7 +2,6 @@ const hre = require("hardhat");
 const { HandshakeIntf } = require("./interface/handshake_intf.js");
 var hsm = require('./interface/hsm.js');
 const BN = require("bn.js");
-const EdDSA = require('elliptic').eddsa;
 const createHash = require( 'crypto' ).createHash;
 const prompt = require("prompt-sync")({sigint: true});
 const { GuestProver } = require("./prover.js");
@@ -78,9 +77,6 @@ LockNetwork.prototype.connect = async function () {
   let _guests = await hre.ethers.getSigners();
   this.guest = _guests[process.env.SIGNER_INDEX];
   this.guestaddress = await this.guest.getAddress();
-  console.log("this.guestaddress: " + this.guestaddress);
-  console.log("typeof this.guestaddress: " + typeof(this.guestaddress));
-
 	this.registerEvents();
 }
 
