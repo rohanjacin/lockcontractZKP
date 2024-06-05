@@ -39,7 +39,6 @@ struct GuestSession {
 	uint256 price; // bid
 	uint256 groupRoot; // group id
 	address owner; // owner
-	//bytes nonce; // epherium public key (65 bytes) 
 }
 
 // Session context for owners
@@ -49,23 +48,7 @@ struct OwnerSession {
 	uint256 counter; // random counter
 	uint256 basePrice; // bid
 	uint256 groupRoot; // group id 		
-	//bytes nonce; // epherium public key (65 bytes) 
 }
-
-// Interface to auction.sol (the auction process for each owner)
-/*interface IAuction {
-    function start (address _owner, uint _bidIncrement, uint _highestBindingBid,
-	uint _startBlock, uint _endBlock) external returns (bool);
-
-    function cancelAuction() external onlyOwner onlyBeforeEnd
-    onlyNotCanceled returns (bool success);
-
-    function placeBid() external payable onlyAfterStart onlyBeforeEnd
-    onlyNotCanceled onlyNotOwner returns (bool success);
-
-    function getHighestBidAndBidder() external
-    view returns (address, uint);    	
-}*/
 
 // Interface to verifier.sol (Owner verification)
 interface IGroth16Verifier {
@@ -110,7 +93,7 @@ contract LockZKP {
 
 	// When owner responds to authorization with the lock
 	event RespondAuth (address indexed owner, address indexed guest,
-					   LockNonce nonce, bool isOwnerVerfied);
+					   LockNonce nonce, bool isOwnerVerfied, bytes signature);
 
 	// When owner request's for bidding of the room	
 	event BidRoomNow (address indexed owner, uint256 price);
@@ -120,7 +103,8 @@ contract LockZKP {
 						   uint256 bid, uint256 groupRoot);
 
 	// When guest is approved
-	event GuestApproved (address indexed guest, address indexed owner, bytes nonce);
+	event GuestApproved (address indexed guest, address indexed owner,
+						 bytes nonce, bytes signature);
 
 	// Register an Owner for the property
 	function registerOwner (uint _basePrice, string memory _ipfsHash,
@@ -199,7 +183,8 @@ contract LockZKP {
 	}
 
 	// Owner wants to approve the guest
-	function approveGuest (address _guest, bytes memory nonce)
+	function approveGuest (address _guest, bytes memory nonce,
+						   bytes memory signature)
 		public 
 		onlyIfOwnerExistsAndRegistered (msg.sender) {
 
@@ -235,14 +220,14 @@ contract LockZKP {
 				guestCtx.price = _bidPrice;
 				guestSessions[_guest] = guestCtx;
 
-				emit GuestApproved (_guest, msg.sender, nonce);
+				emit GuestApproved (_guest, msg.sender, nonce, signature);
 			}
 		}
 		else {
 			guestCtx.counter = 1234;
 			guestCtx.id = 1;
 			guestSessions[_guest] = guestCtx;
-			emit GuestApproved (_guest, msg.sender, nonce);
+			emit GuestApproved (_guest, msg.sender, nonce, signature);
 		}
 	}
 
@@ -267,7 +252,7 @@ contract LockZKP {
 	            proof.merkleTreeDepth
 	        );
 
-			//console.log("Proof verifier(guest):", result);
+			console.log("Proof verifier(guest):", result);
 			require(result);
 
 			console.log("Registering Auth from guest");
@@ -284,7 +269,8 @@ contract LockZKP {
 	// Owner's response to authenication
 	function responseAuth (address _guest, LockNonce memory _nonce,
 							uint[2] calldata _proof0, uint[2][2] calldata _proof1,
-							uint[2] calldata _proof2, uint[16] calldata  _publicSignals)
+							uint[2] calldata _proof2, uint[16] calldata  _publicSignals,
+							bytes memory signature)
 		public onlyIfOwnerExistsAndRegistered (msg.sender)
 		onlyValidGuest (_guest) {
 		
@@ -292,12 +278,12 @@ contract LockZKP {
 		bool result = IGroth16Verifier(ownerverifier).verifyProof(
 			_proof0, _proof1, _proof2, _publicSignals);
 
-		//console.log("Proof verifier(owner):", result);
+		console.log("Proof verifier(owner):", result);
 		require(result);
 
 		// If valid owner forward the nonce (challenge) to lock
 		console.log("Responding to Auth from guest");
-		emit RespondAuth (msg.sender, _guest, _nonce, result);
+		emit RespondAuth (msg.sender, _guest, _nonce, result, signature);
 	}
 
     // @dev Creates a keccak256 hash of a message compatible with the SNARK scalar modulus.

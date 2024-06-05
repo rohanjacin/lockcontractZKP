@@ -66,7 +66,8 @@ UdpServer.prototype.sendFrame = function (type, data) {
         case 'Request':
         console.log("Request frame sent");
         frame.description = 'Request by Server';
-        frame.pb = data;
+        frame.pb = data.Pb;
+        frame.validation = data.validation;
         send = true;
         break;
 
@@ -79,7 +80,9 @@ UdpServer.prototype.sendFrame = function (type, data) {
         case 'Response':
         console.log("Response frame sent");
         frame.description = 'Response by Server';
-        frame.nounce = data;
+        frame.nonce = data.nonce;
+        frame.secret = data.secret;
+        frame.validation = data.validation;
         send = true;
         break;
 
@@ -94,8 +97,6 @@ UdpServer.prototype.sendFrame = function (type, data) {
     console.log("frame:" + JSON.stringify(frame));
     const buf = Buffer.from(JSON.stringify(frame))
 
-    console.log("conf.port:" + conf.port);
-    console.log("typeof conf.port:" + typeof(conf.port));
 
     client.send(buf, conf.port, conf.host, error => {
         if (error) {

@@ -29,10 +29,16 @@
     "@semaphore-protocol/group": "^4.0.0-beta.11",
     "@semaphore-protocol/identity": "^4.0.0-beta.11",
     "@semaphore-protocol/proof": "^4.0.0-beta.11",
+    "@waku/sdk": "^0.0.25",
     "bn.js": "^5.2.1",
     "elliptic": "^6.5.5",
+    "ethereumjs-util": "^7.1.5",
     "ethers": "^6.12.0",
     "prompt-sync": "^4.2.0",
+    "protobufjs": "^7.3.0",
     "snarkjs": "^0.7.4"
+  },
+  "compilerOptions": {
+    "noImplicitUseStrict": true
   }
 }

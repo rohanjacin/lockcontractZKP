@@ -55,7 +55,7 @@ class HandshakeIntf extends EventEmitter {
   postEventToContract = (e, data)=>{process.nextTick(() => {this.emit('contract_event', e, data);})};
 };
 
-HandshakeIntf.prototype.sendRequest = function (nonce0) {
+HandshakeIntf.prototype.sendRequest = function (nonce, validation) {
   let now = new BN(Math.floor(Date.now()/1000), 16);
 
   if (this.isRefreshed(now) == false) {
@@ -67,10 +67,10 @@ HandshakeIntf.prototype.sendRequest = function (nonce0) {
 
   this.start = now;
   
-  let Pb = Buffer.from(nonce0, 'hex');
+  let Pb = Buffer.from(nonce, 'hex');
   console.log("Pb:" + Pb.toString());
 
-  this.frame.sendFrame('Request', Pb);
+  this.frame.sendFrame('Request', {Pb, validation});
   this.postEvent('request');
   return true;
 }
@@ -144,7 +144,7 @@ HandshakeIntf.prototype.createChallenge = function () {
   return true;
 }
 
-HandshakeIntf.prototype.sendChallenge = function (nonce) {
+HandshakeIntf.prototype.sendChallenge = function (nonce, secret, validation) {
   let now = new BN(Math.floor(Date.now()/1000), 16);
 
   if (this.isRefreshed(now) == false) {
@@ -154,7 +154,7 @@ HandshakeIntf.prototype.sendChallenge = function (nonce) {
     return false;
   }
 
-  this.frame.sendFrame('Response', nonce);
+  this.frame.sendFrame('Response', {nonce, secret, validation});
   this.postEvent('ack_pending');
   return true;
 }

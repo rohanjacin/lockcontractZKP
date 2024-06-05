@@ -2,6 +2,7 @@ const hre = require("hardhat");
 var hsm = require('./hsm.js');
 var utils = require('./utils.js');
 const BN = require("bn.js");
+const createHash = require( 'crypto' ).createHash;
 const { ServerHandshake } = require("./server_handshake.js");
 const { LockProver } = require("./prover.js");
 const { Identity } = require("@semaphore-protocol/identity");
@@ -25,8 +26,6 @@ class LockNetwork extends ServerHandshake {
     this.identity = null;
     this.bidTimer = null;
     this.bidCountSecs = 10000;
-
-
     this.buildContractEventHandler();
 
     // Using Semaphore-protocol for identity 
@@ -120,6 +119,7 @@ LockNetwork.prototype.registerEvents = async function () {
               clearInterval(this.bidTimer);
 
               console.log("this.guest:" + this.guest);
+
               this.approveGuest(this.guest);
             }
           });
@@ -189,11 +189,26 @@ LockNetwork.prototype.approveGuest = async function (guest) {
 
 	let {type, nonce} = await this.sendRequest();
 	console.log("type:" + type);
-	console.log("nonce:" + nonce.toString());
-	nonce = Uint8Array.from(nonce.slice(0, 65));
+	console.log("nonce:", nonce);
 
-	await this.samplelock.connect(this.owner).approveGuest(guest, nonce);
+  let _guest = guest.split("0x");
+  _guest = Buffer.from(_guest[1], 'hex');
+
+  let sig = this.createValidity(nonce, _guest);
+	await this.samplelock.connect(this.owner).approveGuest(guest, nonce, sig);
 	console.log("We approved the guest");
+}
+
+LockNetwork.prototype.createValidity = async function (nonce, guest) {
+  // Bind the guest address with the nonce
+  let hash = createHash('sha256');
+  hash.update(nonce);
+  hash.update(guest);
+  let msg = hash.digest();
+
+  // Sign
+  let ret = await this.owner.signMessage(msg);
+  return ret;    
 }
 
 // Respond to Auth with challenge to the guest/lock
@@ -211,9 +226,19 @@ LockNetwork.prototype.responseAuth = async function (guest, nonce) {
   this.lockprover.update();
   let { proof, publicSignals } = await this.lockprover.prove();
 
+  let _guest = guest.split("0x");
+  _guest = Buffer.from(_guest[1], 'hex');
+
+  let _response = Buffer.concat([nonce0, nonce1, seed, counter, hmac],
+                    nonce0.length, nonce1.length, seed.length,
+                    counter.length, hmac.length);
+
+  // Bind the guest address with the response
+  let sig = this.createValidity(_response, _guest);
+
   await this.samplelock.connect(this.owner).responseAuth(guest,
                                 response, proof[0], proof[1], proof[2],
-                                publicSignals);
+                                publicSignals, sig);
   console.log("We responded to the auth");
 }
 

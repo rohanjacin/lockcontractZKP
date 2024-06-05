@@ -2,15 +2,14 @@ const hre = require("hardhat");
 const { HandshakeIntf } = require("./interface/handshake_intf.js");
 var hsm = require('./interface/hsm.js');
 const BN = require("bn.js");
+const EdDSA = require('elliptic').eddsa;
+const createHash = require( 'crypto' ).createHash;
 const prompt = require("prompt-sync")({sigint: true});
 const { GuestProver } = require("./prover.js");
 const { Identity } = require("@semaphore-protocol/identity");
 const { Group } = require("@semaphore-protocol/group");
 const { generateProof } = require("@semaphore-protocol/proof");
 const fs = require("fs");
-
-var elliptic = require('elliptic');
-var EC = elliptic.ec
 
 class LockNetwork extends HandshakeIntf {
 	constructor(_privKey) {
@@ -19,12 +18,15 @@ class LockNetwork extends HandshakeIntf {
 		this.Lock = null;
 		this.deployedAddress = null;
 		this.guest = null;
+    this.guestaddress = null;
     this.owner = null;
     //this.guestprover = new GuestProver();
     this.ownerGroup = null;
     this.proof = null;
     this.group = null;
     this.identity = null;
+    this.secret = 'guestsecret';
+
     this.buildContractEventHandler();
 
     // Using Semaphore-protocol for identity 
@@ -75,6 +77,9 @@ LockNetwork.prototype.connect = async function () {
 	console.log(`Attached to LockNetwork contract`);
   let _guests = await hre.ethers.getSigners();
   this.guest = _guests[process.env.SIGNER_INDEX];
+  this.guestaddress = await this.guest.getAddress();
+  console.log("this.guestaddress: " + this.guestaddress);
+  console.log("typeof this.guestaddress: " + typeof(this.guestaddress));
 
 	this.registerEvents();
 }
@@ -90,30 +95,40 @@ LockNetwork.prototype.registerEvents = async function () {
     this.requestRoom();   
   });
 
-	filter = this.samplelock.filters.GuestApproved(this.guest, null, null);
-	this.samplelock.on(filter, (result) => {
+	filter = this.samplelock.filters.GuestApproved(this.guest, null, null, null);
+	this.samplelock.on(filter, async (result) => {
 
 		console.log("We have been approved by owner..");
 		console.log("Guest:" + result.args.guest);
 		console.log("Owner:" + result.args.owner);
 		console.log("Nonce:" + result.args.nonce);
-		let nonce = result.args.nonce;
-		nonce = nonce.split("0x");
-		console.log("nonce0:" + nonce);
+    console.log("Signature:" + result.args.signature);
 
-    this.owner = result.args.owner;
-    this.sendRequest(nonce[1]);		
+
+		let _nonce = result.args.nonce;
+		_nonce = _nonce.split("0x");
+    nonce = Buffer.from(_nonce[1], 'hex');
+
+    let guestaddress = this.guestaddress.split("0x");
+    guestaddress = Buffer.from(guestaddress[1], 'hex');
+
+    let validation = await this._verifyAndSignNonce(nonce, result.args.owner,
+          result.args.signature, guestaddress);
+    this.sendRequest(_nonce[1], validation);
+
 		return;
 	});
 
-  filter = this.samplelock.filters.RespondAuth(null, this.guest, null, null);
-  this.samplelock.on(filter, (result) => {
+  filter = this.samplelock.filters.RespondAuth(null, this.guest, null, null, null);
+  this.samplelock.on(filter, async (result) => {
 
     console.log("We have been approved by owner..");
     console.log("Guest:" + result.args.guest);
     console.log("Owner:" + result.args.owner);
     console.log("Owner verified?:" + result.args.isOwnerVerfied);
     console.log("Nonce:" + result.args.nonce);
+    console.log("Signature:" + result.args.signature);
+
     let nonce = result.args.nonce;
 
     let nonce0 = nonce[0].split("0x");
@@ -134,7 +149,13 @@ LockNetwork.prototype.registerEvents = async function () {
     console.log("Nonce is:" + JSON.stringify(respnonce));
     console.log("Nonce(len):" + respnonce.length);
 
-    this.sendChallenge(respnonce);
+    let guestaddress = this.guestaddress.split("0x");
+    guestaddress = Buffer.from(guestaddress[1], 'hex');
+
+    let validation = await this._verifyAndSignNonce(respnonce,
+          result.args.owner, result.args.signature, guestaddress);
+    this.sendChallenge(respnonce, this.secret, validation);
+
     return;
   });  	
 }
@@ -152,6 +173,41 @@ LockNetwork.prototype.buildContractEventHandler = async function () {
 			console.log("Creating the challenge (response)");
 		}				
 	}.bind(this));
+}
+
+LockNetwork.prototype._verifyAndSignNonce = async function (data, owner,
+                                  ownersig, guestaddress) {
+    let hash = createHash('sha256');
+    hash.update(data);
+    hash.update(guestaddress);
+    let msg = hash.digest();
+
+    // Verify owner's signature
+    let address = hre.ethers.verifyMessage(msg, ownersig);
+
+    if (owner == address) {
+      console.log("Owner verified");
+      this.owner = owner;
+    }
+
+    // Sign
+    ownersig = ownersig.split("0x");
+    ownersig = Buffer.from(ownersig[1], 'hex');
+
+    hash = createHash('sha256');
+    hash.update(ownersig);
+    msg = hash.digest();
+
+    let guestsig = await this.guest.signMessage(msg);
+    guestsig = guestsig.split("0x");
+    guestsig = Buffer.from(guestsig[1], 'hex');      
+
+    console.log("Guest signature created:", guestsig);
+
+    let ret = Buffer.concat([ownersig, guestsig,
+                  guestaddress], ownersig.length + 
+                  guestsig.length + guestaddress.length);
+    return ret;
 }
 
 LockNetwork.prototype.requestRoom = async function () {
